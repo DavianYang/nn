@@ -63,3 +63,29 @@ class TransitionBlock(nn.Module):
         self.add_module('act', nn.ReLU(inplace=True))
         self.add_module('conv', nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=False))
         self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))
+        
+
+class DenseBlock(nn.ModuleDict):
+    """
+        A building block of Transition Block
+        
+        Return:
+            Output tensor for the block
+    """
+    def __init__(self, num_layers, in_features, bn_size, growthrate, drop_rate):
+        super().__init__()
+        for i in range(num_layers):
+            layer = ConvBlock(
+                in_features + i * growthrate,
+                growthrate=growthrate,
+                bn_size=bn_size,
+                drop_rate=drop_rate
+            )
+            self.add_module(f'convblock{i+1}', layer)
+            
+    def forward(self, init_features):
+        features = [init_features]
+        for name, layer in self.items():
+            new_features = layer(features)
+            features.append(new_features)
+        return torch.cat(features, 1)
