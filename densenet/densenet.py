@@ -43,3 +43,23 @@ class ConvBlock(nn.Module):
         if self.drop_out > 0:
             out = F.dropout(out, p=self.drop_out)
         return out
+    
+
+class TransitionBlock(nn.Module):
+    """
+        A building block of Transition Block
+        
+        Return:
+            Output tensor for the block
+
+    """
+    def __init__(
+        self,
+        in_channels,
+        out_channels):
+        super().__init__()
+        
+        self.add_module('bn', nn.BatchNorm2d(in_channels))
+        self.add_module('act', nn.ReLU(inplace=True))
+        self.add_module('conv', nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=False))
+        self.add_module('pool', nn.AvgPool2d(kernel_size=2, stride=2))
