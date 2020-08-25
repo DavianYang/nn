@@ -8,12 +8,7 @@ import pytorch_lightning as pl
 class ConvBlock(nn.Module):
     """
         A building block of Conv Block
-        
-        Arguments:
-            input_channels: Tensor,
-            growth_rate: Float,
-            dropout_rate: Float
-        
+                
         Return:
             Output tensor for the block
 
@@ -21,11 +16,10 @@ class ConvBlock(nn.Module):
     def __init__(
         self, 
         in_channels, 
-        growthrate, 
-        dropout_rate):
+        growthrate):
         super().__init__()
-        self.dropout = float(dropout_rate)
         interchannels = 4 * growthrate
+        
         # 1x1 Convolution
         self.conv1x1 = nn.ModuleDict({
             'bn': nn.BatchNorm2d(in_channels),
@@ -44,4 +38,28 @@ class ConvBlock(nn.Module):
         out = self.conv3x3['conv'](F.relu(self.conv3x3['bn'](out)))
         out = torch.cat((x, out), 1)
         return out
+
+
+class TransitionBlock(nn.Module):
+    """
+        A building block of Transition Block
         
+        Return:
+            Output tensor for the block
+
+    """
+    def __init__(
+        self,
+        in_channels,
+        out_channels):
+        super().__init__()
+        
+        self.transition = nn.ModuleDict({
+            'bn': nn.BatchNorm2d(in_channels),
+            'conv': nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, bias=False)
+        })
+        
+        
+    def forward(self, x):
+        out = F.avg_pool2d(self.transition['conv'](F.relu(self.transition['bn'](x))))
+        return out
