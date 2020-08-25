@@ -7,7 +7,7 @@ import pytorch_lightning as pl
 
 class ConvBlock(nn.Module):
     """
-        A building block of Dense Block
+        A building block of Conv Block
         
         Arguments:
             input_channels: Tensor,
@@ -20,7 +20,7 @@ class ConvBlock(nn.Module):
     """
     def __init__(
         self, 
-        input_channels, 
+        in_channels, 
         growthrate, 
         dropout_rate):
         super().__init__()
@@ -28,28 +28,20 @@ class ConvBlock(nn.Module):
         interchannels = 4 * growthrate
         # 1x1 Convolution
         self.conv1x1 = nn.ModuleDict({
-            'bn1': nn.BatchNorm2d(input_channels),
-            'act1': nn.ReLU(inplace=True),
-            'conv1': nn.Conv2d(input_channels, interchannels, kernel_size=1, stride=1, bias=False)  
+            'bn': nn.BatchNorm2d(in_channels),
+            'conv': nn.Conv2d(in_channels, interchannels, kernel_size=1, stride=1, bias=False)  
         })
         
         # 3x3 Convolution
         self.conv3x3 = nn.ModuleDict({
-            'bn2': nn.BatchNorm2d(interchannels),
-            'relu2': nn.ReLU(inplace=True),
-            'conv2': nn.Conv2d(interchannels, growthrate, kernel_size=3, stride=1, padding=1, bias=False)
+            'bn': nn.BatchNorm2d(interchannels),
+            'conv': nn.Conv2d(interchannels, growthrate, kernel_size=3, stride=1, padding=1, bias=False)
         })
         
         
     def forward(self, x):
-        x = self.conv1x1(x)
+        out = self.conv1x1['conv'](F.relu(self.conv1x1['bn'](x)))
+        out = self.conv3x3['conv'](F.relu(self.conv3x3['bn'](out)))
+        out = torch.cat((x, out), 1)
+        return out
         
-        if self.dropout:
-            x = nn.Dropout(p=self.dropout_rate)
-        
-        x = self.conv3x3(x)
-        
-        if self.dropout:
-            x = nn.Dropout(p=self.dropout_rate)
-            
-        return x
