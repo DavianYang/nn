@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 import torchvision.transforms as T
 import pytorch_lightning as pl
+from pytorch_lightning.core.memory import ModelSummary
 
 import math
 from collections import OrderedDict
@@ -132,20 +133,27 @@ class DenseNet(nn.Module):
                 transition = TransitionBlock(in_features=num_features, out_features=num_features // 2)
                 self.features.add_module(f'transition{i+1}', transition)
                 num_features = num_features // 2
+        
+        # Final BatchNorm
+        self.features.add_module('bn5', nn.BatchNorm2d(num_features))
+        
+        # Linear Layer
+        self.classifer = nn.Linear(num_features, num_classes)
+        
+        self.weight_init()
+
                 
-            self.features.add_module('bn5', nn.BatchNorm2d(num_features))
-            
-            self.classifer = nn.Linear(num_features, num_classes)
-            
-            for m in self.modules():
-                if isinstance(m, nn.BatchNorm2d):
-                    nn.init.kaiming_normal_(m.weight)
-                elif isinstance(m, nn.BatchNorm2d):
-                    nn.init.constant_(m.bias, 0)
-                elif isinstance(m, nn.Linear):
-                    nn.init.constant_(m.bias, 0)
-                    
-    
+    def weight_init(self):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.constant_(m.bias, 0)
+                
+
     def forward(self, x):
         features = self.features(x)
         out = F.relu(features, inplace=True)
@@ -153,4 +161,8 @@ class DenseNet(nn.Module):
         out = torch.flatten(out, 1)
         out = self.classifer(out)
         return out
-    
+
+
+if __name__ == "__main__":
+    model = DenseNet()
+    print(model)
