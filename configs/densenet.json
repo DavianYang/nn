@@ -26,6 +26,12 @@
         },
         "num_classes": 80
     },
+    "dataset": {
+        "type": "MSCoco2014Dataset",
+        "args": {
+            
+        }
+    },
     "data_loader": {
         "type": "Cifar10DataLoader",
         "args": {
