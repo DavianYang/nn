@@ -1,3 +1,9 @@
+import sys
+import math
+from collections import OrderedDict
+sys.path.append('..')
+from config import Config
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,8 +14,15 @@ import pytorch_lightning as pl
 from pytorch_lightning.core.memory import ModelSummary
 from pytorch_lightning.metrics.functional import accuracy
 
-import math
-from collections import OrderedDict
+def main():
+    config = Config('configs/densenet_cifar10.json').parse_config()
+    num_classes = config["arch"]["num_classes"]
+    arch = config["arch"]["type"]["densenet121"]
+    model = DenseNet(growthrate=arch["growthrate"], 
+                     block_config=arch["block_config"], 
+                     num_init_features=arch["num_init_features"], 
+                     num_classes=num_classes)
+    lighting = DenseNetLightning(model, config["optimizers"])
 
 class ConvBlock(nn.Module):
     """
@@ -30,7 +43,7 @@ class ConvBlock(nn.Module):
         # 1x1 Convolution
         self.add_module('bn1', nn.BatchNorm2d(in_features))
         self.add_module('act1', nn.ReLU(inplace=True))
-        self.add_module('conv1', nn.Conv2d(in_features, bn_size * growthrate, kernel_size=1, stride=1, bias=False) )
+        self.add_module('conv1', nn.Conv2d(in_features, bn_size * growthrate, kernel_size=1, stride=1, bias=False))
         
         # 3x3 Convolution
         self.add_module('bn2', nn.BatchNorm2d(bn_size * growthrate))
@@ -91,11 +104,11 @@ class DenseBlock(nn.ModuleDict):
                 bn_size=bn_size,
                 drop_rate=drop_rate
             )
-            self.add_module(f'convblock{i+1}', layer)
+            self.add_module(f'convblock-{i+1}', layer)
             
     def forward(self, init_features):
         features = [init_features]
-        for name, layer in self.items():
+        for _, layer in self.items():
             new_features = layer(features)
             features.append(new_features)
         return torch.cat(features, 1)
@@ -128,7 +141,7 @@ class DenseNet(nn.Module):
                 growthrate=growthrate,
                 drop_rate=drop_rate
             )
-            self.features.add_module(f'convblock{i+1}', dense_block)
+            self.features.add_module(f'denseblock-{i+1}', dense_block)
             num_features = num_features + num_layers * growthrate
             
             if i != len(block_config) - 1:
@@ -165,20 +178,20 @@ class DenseNet(nn.Module):
         return out
 
 class DenseNetLightning(pl.LightningModule):
-    def __init__(
-        self,
-        model: nn.Module
-    ):
+    def __init__(self, model, config):
         self.model = model
+        self.config = config
+        self.optimizers = self.config["optimizers"]
     
     def forward(self, x):
         return self.model(x)
     
     def configure_optimizers(self):
+        optim = getattr(torch.optim, self.optimizers["type"])
         return optim(
             self.parameters(),
-            lr=1e-3,
-            weight_decay=0
+            lr=self.optimizers["args"]["lr"],
+            weight_decay=self.optimizers["args"]["weight_decay"]
         )
         
     def training_step(self, batch, batch_idx):
@@ -198,7 +211,7 @@ class DenseNetLightning(pl.LightningModule):
         
         return {
             "train_epoch_loss": avg_loss,
-            "train_epoch_acc": avg_acc    
+            "train_epoch_acc": avg_acc
         }
         
     def validation_step(self, batch, batch_idx):
@@ -242,5 +255,4 @@ class DenseNetLightning(pl.LightningModule):
         }
 
 if __name__ == "__main__":
-    model = DenseNet()
-    print(model)
+    main()
