@@ -1,0 +1,59 @@
+{
+    "name": "DenseNet",
+    "n_gpu": 1,
+    "arch": {
+        "type": {
+            "densenet121": {
+                "growthrate": 32,
+                "block_config": [6, 12, 24, 16],
+                "num_init_features": 64
+            },
+            "densenet161": {
+                "growthrate": 48,
+                "block_config": [6, 12, 36, 24],
+                "num_init_features": 96
+            },
+            "densenet169": {
+                "growthrate": 32,
+                "block_config": [6, 12, 32, 32],
+                "num_init_features": 64
+            },
+            "densenet201": {
+                "growthrate": 32,
+                "block_config": [6, 12, 48, 32],
+                "num_init_features": 64
+            }
+        },
+        "num_classes": 80
+    },
+    "data_loader": {
+        "type": "Cifar10DataLoader",
+        "args": {
+            "data_dir": "data/",
+            "batch_size": 64,
+            "shuffle": true,
+            "validation_split": 0.1,
+            "num_workers": 2
+        }
+    },
+    "optimizers": {
+        "type": "SGD",
+        "args": {
+            "lr": 1e-3,
+            "weight_decay": 0,
+            "momentum": 0.9
+        }
+    },
+    "metrics": [
+        "accuracy", "top_k_acc"
+    ],
+    "trainer": {
+        "epochs": 100,
+        "save_dir": "checkpoints/",
+        "save_freq": 5,
+        "verbosity": 2,
+
+        "monitor": "min val_loss",
+        "early_stop": 10
+    }
+}
