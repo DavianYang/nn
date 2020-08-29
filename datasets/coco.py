@@ -35,9 +35,9 @@ class CocoDetectionDataset(CocoDetection):
         for target in targets:
             bbox = torch.tensor(target['bbox'], dtype=torch.float32)
             category_id = target['category_id']
-            if (not self.all_categories) and (category_id, dtype="float32"):
+            if (not self.all_categories) and (category_id != self.category_id):
                 continue
-            one_hot_label = self.coco_category_to_one_hot(category_id, dtype="float32")
+            one_hot_label = self.coco_category_to_one_hot(category_id)
             conf = torch.tensor([1.])
             label = torch.cat([bbox, conf, one_hot_label])
             labels.append(label)
@@ -50,7 +50,7 @@ class CocoDetectionDataset(CocoDetection):
         return transformed_img_tensor, label_tensor, label_tensor.size(0)
     
             
-    def coco_category_to_one_hot(category_id, dtype="uint"):
+    def coco_category_to_one_hot(self, category_id, dtype="float32"):
         new_id = self.delete_coco_empty_category(category_id)
         return torch.from_numpy(np.eye(NUM_CLASSES_COCO, dtype=dtype)[category_id])
     
