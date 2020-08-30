@@ -1,7 +1,3 @@
-import sys
-sys.path.append('..')
-from config import Config
-
 import numpy as np
 import torch
 from torchvision.datasets import CocoDetection
@@ -55,7 +51,7 @@ class CocoDetectionDataset(CocoDetection):
         return torch.from_numpy(np.eye(NUM_CLASSES_COCO, dtype=dtype)[category_id])
     
     
-    def delete_coco_empty_category(old_id):
+    def delete_coco_empty_category(self, old_id):
         start_idx = 1
         new_id = old_id - start_idx
         for missing_id in MISSING_IDS:
