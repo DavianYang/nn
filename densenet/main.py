@@ -15,5 +15,6 @@ def main():
                      num_classes=num_classes)
     lighting = DenseNetLightning(model, config["optimizers"])
 
+
 if __name__ == "__main__":
     main()
