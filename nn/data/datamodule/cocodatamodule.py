@@ -1,7 +1,7 @@
 import torch
 import pytorch_lightning as pl
 from torch.utils.data import random_split, DataLoader
-from datasets.coco import CocoDetectionDataset
+from nn.data.datasets.coco import CocoDetectionDataset
 
 class CocoDataModule(pl.LightningDataModule):
     def __init__(self, 

@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from torchvision.datasets import CocoDetection
 import torchvision.transforms as T
-from utils import xywh_to_cxcywh
-from transforms import default_transform
+from nn.utils import xywh_to_cxcywh
+from nn.data.transforms import default_transform
 
 MISSING_IDS = [12, 26, 29, 30, 45, 66, 68, 69, 71, 83, 91]
 NUM_CLASSES_COCO = 80
